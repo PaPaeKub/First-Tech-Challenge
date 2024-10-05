@@ -31,8 +31,8 @@ public class Auto extends Robot {
         Init();
         WaitForStart();
         if (opModeIsActive()) {
-            move(1.0, 1.0, 0.0,1.0);
-            move(0.0, 1.0, 0.0,1.0);
+            move(1.0, 0.0, 0.0,0.0);
+            move(0.0, 1.0, 0.0,0.0);
         }
     }
 }

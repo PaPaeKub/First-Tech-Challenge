@@ -1,5 +1,7 @@
 package org.firstinspires.ftc.teamcode;
 
+import static org.firstinspires.ftc.teamcode.Utilize.WrapRads;
+
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -16,7 +18,7 @@ public abstract class Robot extends LinearOpMode {
     public IMU imu;
     public VisionPortal visionPortal;
     public Servo LA, RA, LH, RH, ALL, ARL, IT, DP, ADP;
-    public DcMotorEx FL, FR, BL, BR, encoderleft, encoderRight, encoderMid ;
+    public DcMotorEx FL, FR, BL, BR, encoder1, encoder2, encoder3 ;
     public int FL_Target, FR_Target, BL_Target, BR_Target;
     public final double[] tileSize            = {60.96, 60.96};  // Width * Length
     /* TETRIX Motor Encoder per revolution */
@@ -36,71 +38,72 @@ public abstract class Robot extends LinearOpMode {
     public final double   N                   = 2000 ; // ticks per one rotation
     public double         cm_per_tick         = 2.0 * Math.PI * r / N ;
     public int            dn1, dn2, dn3 ;
-    public double         dx, dy, Posx, Posy  ;
+    public double         dx, dy, Posx, Posy, heading  ;
     public double         R                   = 5.08; //mecanum wheel radius in cm
 
     // update encoder
-    public int            CurrentLeftPosition= 0 ;
-    public int            CurrentRightPosition= 0 ;
-    public int            CurrentMidPosition= 0 ;
+    public int            Current1Position= 0 ;
+    public int            Current2Position= 0 ;
+    public int            Current3Position= 0 ;
 
-    public int            OldLeftPosition= 0 ;
-    public int            OldRightPosition= 0 ;
-    public int            OldMidPosition= 0;
+    public int            Old1Position= 0 ;
+    public int            Old2Position= 0 ;
+    public int            Old3Position= 0;
 
     public void Odomentry (){
-      OldLeftPosition         = CurrentLeftPosition;
-      OldRightPosition        = CurrentRightPosition;
-      OldMidPosition          = CurrentMidPosition;
+      Old1Position         = Current1Position;
+      Old2Position         = Current2Position;
+      Old3Position         = Current3Position;
 
-      CurrentLeftPosition     = encoderleft.getCurrentPosition();
-      CurrentRightPosition    = encoderRight.getCurrentPosition();
-      CurrentMidPosition      = encoderMid.getCurrentPosition();
+      Current1Position     = encoder1.getCurrentPosition();
+      Current2Position     = encoder2.getCurrentPosition();
+      Current3Position     = encoder3.getCurrentPosition();
 
-      dn1 = CurrentLeftPosition - OldLeftPosition;
-      dn2 = CurrentRightPosition - OldRightPosition;
-      dn3 = CurrentMidPosition - OldMidPosition;
+      dn1 = Current1Position - Old1Position;
+      dn2 = Current2Position - Old2Position;
+      dn3 = Current3Position - Old3Position;
 
-      dx = cm_per_tick * ( dn1 + dn2 ) / 2.0 ;
-      dy = cm_per_tick * ( dn3 - ( dn2 - dn1 ) * B / L );
+      dy = cm_per_tick * ( dn1 + dn2 ) / 2.0 ;
+      dx = cm_per_tick * ( dn3 - ( dn2 - dn1 ) * B / L );
+      double dthetha = cm_per_tick * ( dn2 - dn1 ) / L ;
 
-      double yaw   = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.RADIANS);
-      Posy += dx * Math.cos(yaw) - dy * Math.sin(yaw);
-      Posx += dx * Math.sin(yaw) + dy * Math.cos(yaw);
+      double theta = heading + (dn2 - dn1) / L;
+      Posy += dy * Math.cos(theta) - dx * Math.sin(theta);
+      Posx += dy * Math.sin(theta) + dx * Math.cos(theta);
+      heading += dthetha;
     }
 
-    public void move(double tilex, double tiley, double omega, double timeout){
-
+    public void move(double tilex, double tiley, double timeout , double setpoint){
+        Controller  pidR    = new Controller(1.0, 0.01, 0.04, 0);
         double targetx = tilex * tileSize[0];
         double targety = tiley * tileSize[1];
-        double R = 5.08; //mecanum wheel radius in cm
-        double DistanceLR = 33.655;
-        double DistanceFB = 28.50;
-
         ElapsedTime runtime = new ElapsedTime();
         runtime.reset();
 
 
         while (opModeIsActive()) {
             Odomentry();
-            double DeltaX = targetx - Posx;
-            double DeltaY = targety - Posy;
+            double yaw   =  imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.RADIANS);
+            double DeltaX = -targetx - Posx;
+            double DeltaY = -targety - Posy;
 
-            double Vx = 0.001 * DeltaX;
-            double Vy = 0.001 * DeltaY;
+            double Vx = 0.1 * DeltaX;
+            double Vy = 0.1 * DeltaY;
 
+            double x2    =  (Math.cos(yaw) * Vx) - (Math.sin(yaw) * Vy);
+            double y2    =  (Math.sin(yaw) * Vx) + (Math.cos(yaw) * Vy);
+
+            double r =  pidR.Calculate(WrapRads(setpoint - yaw));
             double d = Math.max(Math.abs(Vx) + Math.abs(Vy), 1);
-            double VFL = (Vx + Vy - omega * (DistanceFB + DistanceLR) / R) / d;
-            double VFR = (Vx - Vy + omega * (DistanceFB + DistanceLR) / R) / d;
-            double VBL = (Vx - Vy - omega * (DistanceFB + DistanceLR) / R) / d;
-            double VBR = (Vx + Vy + omega * (DistanceFB + DistanceLR) / R) / d;
+            MovePower((y2 - x2 - r) / d, (y2 + x2 + r) / d,
+                    (y2 + x2 - r) / d, (y2 - x2 + r) / d);
 //            double yaw = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.RADIANS);
-            MovePower(VFL,VFR,VBL, VBR);
             telemetry.addData("XY", "%6f cm %6f cm" , Posx, Posy);
+            telemetry.addData("tagetXtargetY", "%6f cm %6f cm" , targetx, targety);
             telemetry.update();
-            if (Utilize.AtTargetRange(Posx, targetx, 10) && Utilize.AtTargetRange(Posy, targety, 10)) break;
+            if (Utilize.AtTargetRange(Posx, targetx, 5) && Utilize.AtTargetRange(Posy, targety, 5)) break;
         }
-        Break(2);
+        Break(0.3);
     }
 
 
@@ -128,14 +131,14 @@ public abstract class Robot extends LinearOpMode {
         imu = hardwareMap.get(IMU.class,       "imu");
         FL  = hardwareMap.get(DcMotorEx.class, "Front_Left");    FR  = hardwareMap.get(DcMotorEx.class, "Front_Right");
         BL  = hardwareMap.get(DcMotorEx.class, "Back_Left");     BR  = hardwareMap.get(DcMotorEx.class, "Back_Right");
-        encoderleft = FL ;
-        encoderRight = FR;
-        encoderMid = BL;
+        encoder1 = FL ;
+        encoder2 = FR;
+        encoder3 = BL;
 
         // Initialize IMU
       imu.initialize(new IMU.Parameters(new RevHubOrientationOnRobot(
-                RevHubOrientationOnRobot.LogoFacingDirection.RIGHT,
-                RevHubOrientationOnRobot.UsbFacingDirection .BACKWARD)));
+                RevHubOrientationOnRobot.LogoFacingDirection.FORWARD,
+                RevHubOrientationOnRobot.UsbFacingDirection .UP)));
 
         // Reverse Servo
 

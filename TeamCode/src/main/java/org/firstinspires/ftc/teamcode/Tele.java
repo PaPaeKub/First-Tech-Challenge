@@ -23,12 +23,12 @@ public class Tele extends Robot {
                                                         new double[]{0, 0, 0, 0});
 
         // Show FTC Dashboard
-        controller = new Controller(1.6, 0.01, 0.01, 0);
+        controller =new Controller(0.7, 0.01, 0.01, 0);
     }
 
     private void Movement() {
         double speed =  0.275;
-        double lx    =  gamepad1.left_stick_x;
+        double lx    = -gamepad1.left_stick_x;
         double ly    = -gamepad1.left_stick_y;
         double x1    =  gamepad1.dpad_left ?  speed : gamepad1.dpad_right ? -speed : lx;
         double y1    =  gamepad1.dpad_up   ? -speed : gamepad1.dpad_down  ?  speed : ly;
@@ -37,15 +37,15 @@ public class Tele extends Robot {
         double y2    =  (Math.sin(yaw) * x1) + (Math.cos(yaw) * y1);
         // Rotate
         double r = r_disable ? 0 : controller.Calculate(WrapRads(setpoint - yaw));
-        double x = gamepad1.right_stick_x;
+        double x = -gamepad1.right_stick_x;
         if (x != 0) {
             r = x;
             setpoint = yaw;
         }
         // Denominator for division to get no more than 1
         double d = Math.max(Math.abs(x2) + Math.abs(y2) + Math.abs(r), 1);
-        MovePower((y2 + x2 - r) / d, (y2 - x2 + r) / d,
-                  (y2 - x2 - r) / d, (y2 + x2 + r) / d);
+        MovePower((y2 - x2 - r) / d, (y2 + x2 + r) / d,
+                (y2 + x2 - r) / d, (y2 - x2 + r) / d);
         telemetry.addData("yaw", Math.toDegrees(-yaw));
     }
     @Override
@@ -57,8 +57,9 @@ public class Tele extends Robot {
                 Movement();
                 Odomentry();
 
-                telemetry.addData("XY", "%6f cm %6f cm" , Posx, Posy);
-                telemetry.addData("LRM", "%6d  %6d %6d" ,CurrentLeftPosition, CurrentRightPosition, CurrentMidPosition);
+                telemetry.addData("XYH", "%6f cm %6f cm %6f deg" , Posx, Posy, Math.toDegrees(heading));
+                telemetry.addData("LRM", "%6d  %6d %6d" ,Current1Position, Current2Position, Current3Position);
+                telemetry.addData("Stickx", "%6f" , (-gamepad1.right_stick_x));
                 telemetry.update();
                 if(gamepad1.y){
                     imu.resetYaw();

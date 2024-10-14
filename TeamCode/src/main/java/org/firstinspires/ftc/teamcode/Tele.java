@@ -23,7 +23,7 @@ public class Tele extends Robot {
                                                         new double[]{0, 0, 0, 0});
 
         // Show FTC Dashboard
-        controller =new Controller(0.7, 0.01, 0.01, 0);
+        controller =new Controller(0.9, 0.01, 0.008, 0);
     }
 
     private void Movement() {
@@ -65,7 +65,14 @@ public class Tele extends Robot {
                     imu.resetYaw();
                     setpoint=0;
                 }
+                if(gamepad1.x){
+                    FL.setPower(1);
+                    FR.setPower(1);
+                    BL.setPower(1);
+                    BR.setPower(1);
+                }
             }
         }
     }
 }
+

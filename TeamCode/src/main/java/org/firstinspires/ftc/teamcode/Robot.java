@@ -32,14 +32,13 @@ public abstract class Robot extends LinearOpMode {
     public final double   Wheel_Diameter_Inch = 7.5/2.54;
     public final double   Counts_per_Inch     = Gear_20_HD_HEX / (Wheel_Diameter_Inch * Math.PI);
     public double[]       currentXY           = {0, 0};
-    public double         L                   = 35.50; //distance between 1 and 2 in cm
-    public double         B                   = 21.50; //distance between center of 1 and 2 and 3 in cm
+    public final double   L                   = 32.50; //distance between 1 and 2 in cm
+    public final double   B                   = 19.0; //distance between center of 1 and 2 and 3 in cm
     public final double   r                   = 2.5 ; // Odomentry wheel radius in cm
     public final double   N                   = 2000 ; // ticks per one rotation
     public double         cm_per_tick         = 2.0 * Math.PI * r / N ;
     public int            dn1, dn2, dn3 ;
     public double         dx, dy, Posx, Posy, heading  ;
-    public double         R                   = 5.08; //mecanum wheel radius in cm
 
     // update encoder
     public int            Current1Position= 0 ;
@@ -51,13 +50,15 @@ public abstract class Robot extends LinearOpMode {
     public int            Old3Position= 0;
 
     public void Odomentry (){
+
+        double yaw   =  imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.RADIANS);
       Old1Position         = Current1Position;
       Old2Position         = Current2Position;
       Old3Position         = Current3Position;
 
       Current1Position     = encoder1.getCurrentPosition();
       Current2Position     = encoder2.getCurrentPosition();
-      Current3Position     = encoder3.getCurrentPosition();
+      Current3Position     = -encoder3.getCurrentPosition();
 
       dn1 = Current1Position - Old1Position;
       dn2 = Current2Position - Old2Position;
@@ -68,8 +69,8 @@ public abstract class Robot extends LinearOpMode {
       double dthetha = cm_per_tick * ( dn2 - dn1 ) / L ;
 
       double theta = heading + (dn2 - dn1) / L;
-      Posy += dy * Math.cos(theta) - dx * Math.sin(theta);
-      Posx += dy * Math.sin(theta) + dx * Math.cos(theta);
+      Posy -= dy * Math.cos(yaw) - dx * Math.sin(yaw);
+      Posx += dy * Math.sin(yaw) + dx * Math.cos(yaw);
       heading += dthetha;
     }
 
@@ -84,10 +85,10 @@ public abstract class Robot extends LinearOpMode {
         while (opModeIsActive()) {
             Odomentry();
             double yaw   =  imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.RADIANS);
-            double DeltaX = -targetx - Posx;
-            double DeltaY = -targety - Posy;
+            double DeltaX = targetx - Posx;
+            double DeltaY = targety - Posy;
 
-            double Vx = 0.1 * DeltaX;
+            double Vx = -0.1 * DeltaX;
             double Vy = 0.1 * DeltaY;
 
             double x2    =  (Math.cos(yaw) * Vx) - (Math.sin(yaw) * Vy);
@@ -101,7 +102,7 @@ public abstract class Robot extends LinearOpMode {
             telemetry.addData("XY", "%6f cm %6f cm" , Posx, Posy);
             telemetry.addData("tagetXtargetY", "%6f cm %6f cm" , targetx, targety);
             telemetry.update();
-            if (Utilize.AtTargetRange(Posx, targetx, 5) && Utilize.AtTargetRange(Posy, targety, 5)) break;
+            if (Utilize.AtTargetRange(Posx, targetx, 10) && Utilize.AtTargetRange(Posy, targety, 10)) break;
         }
         Break(0.3);
     }
@@ -111,8 +112,8 @@ public abstract class Robot extends LinearOpMode {
                           double Back_Left,  double Back_Right) {
         FL.setPower(Front_Left);
         FR.setPower(Front_Right);
-        BL.setPower(Back_Left);
-        BR.setPower(Back_Right);
+        BL.setPower(Back_Left*0.9);
+        BR.setPower(Back_Right*0.9);
     }
     public void Break(double stopSecond) {
         if (stopSecond == 0) return;
@@ -137,8 +138,8 @@ public abstract class Robot extends LinearOpMode {
 
         // Initialize IMU
       imu.initialize(new IMU.Parameters(new RevHubOrientationOnRobot(
-                RevHubOrientationOnRobot.LogoFacingDirection.FORWARD,
-                RevHubOrientationOnRobot.UsbFacingDirection .UP)));
+                RevHubOrientationOnRobot.LogoFacingDirection.UP,
+                RevHubOrientationOnRobot.UsbFacingDirection .LEFT)));
 
         // Reverse Servo
 

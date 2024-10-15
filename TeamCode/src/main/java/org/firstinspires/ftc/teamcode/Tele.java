@@ -48,6 +48,16 @@ public class Tele extends Robot {
                 (y2 + x2 - r) / d, (y2 - x2 + r) / d);
         telemetry.addData("yaw", Math.toDegrees(-yaw));
     }
+    private void Lift (){
+        CurPosLift    = Math.max(LL.getCurrentPosition(), RL.getCurrentPosition());
+        double lt            = gamepad2.left_trigger;
+        double rl            = gamepad2.right_trigger;
+        boolean ltpress      = lt >= 0.25;
+        boolean rlpress      = rl >= 0.25;
+        Lift_Power   = ltpress ? (CurPosLift < 0          ?  0   : -lt) :
+                       rlpress ? (CurPosLift > 3000       ?  0   :  rl) : 0;
+        liftPower(Lift_Power);
+    }
 
     @Override
     public void runOpMode() {
@@ -57,12 +67,14 @@ public class Tele extends Robot {
         waitForStart();
         if (opModeIsActive()) {
             while (opModeIsActive()) {
+                Lift();
                 Odomentry();
+                Movement();
 
                 telemetry.addData("XYH", "%6f cm %6f cm %6f deg", Posx, Posy, Math.toDegrees(heading));
                 telemetry.addData("LRM", "%6d  %6d %6d", Current1Position, Current2Position, Current3Position);
-                telemetry.addData("Stickx", "%6f", (-gamepad1.right_stick_x));
-                telemetry.addData("Servo", "%6f", (n));
+                telemetry.addData("Lift", "%6f", CurPosLift);
+                telemetry.addData("Liftpower", "%6f", Lift_Power);
                 telemetry.update();
                 if (gamepad1.y) {
                     imu.resetYaw();

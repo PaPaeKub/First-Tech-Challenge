@@ -18,7 +18,7 @@ public abstract class Robot extends LinearOpMode {
     public IMU imu;
     public VisionPortal visionPortal;
     public Servo LA, RA, LH, RH, ALL, ARL, IT, DP, ADP;
-    public DcMotorEx FL, FR, BL, BR, encoder1, encoder2, encoder3 ;
+    public DcMotorEx FL, FR, BL, BR, RL, LL,  encoder1, encoder2, encoder3 ;
     public int FL_Target, FR_Target, BL_Target, BR_Target;
     public final double[] tileSize            = {60.96, 60.96};  // Width * Length
     /* TETRIX Motor Encoder per revolution */
@@ -38,7 +38,7 @@ public abstract class Robot extends LinearOpMode {
     public final double   N                   = 2000 ; // ticks per one rotation
     public double         cm_per_tick         = 2.0 * Math.PI * r / N ;
     public int            dn1, dn2, dn3 ;
-    public double         dx, dy, Posx, Posy, heading, n  ;
+    public double         dx, dy, Posx, Posy, heading, n, CurPosLift, Lift_Power  ;
 
     // update encoder
     public int            Current1Position= 0 ;
@@ -128,11 +128,16 @@ public abstract class Robot extends LinearOpMode {
         BL.setMode(moveMode);
         BR.setMode(moveMode);
     }
+    public void liftPower(double LiftPower) {
+        LL.setPower(LiftPower);
+        RL.setPower(LiftPower);
+    }
     public void Initialize(DcMotor.RunMode moveMode, double[] DuoServoAng, double[] ServoAng) {
         imu = hardwareMap.get(IMU.class,       "imu");
         FL  = hardwareMap.get(DcMotorEx.class, "Front_Left");    FR  = hardwareMap.get(DcMotorEx.class, "Front_Right");
         BL  = hardwareMap.get(DcMotorEx.class, "Back_Left");     BR  = hardwareMap.get(DcMotorEx.class, "Back_Right");
         LA  = hardwareMap.get(Servo.class,     "Left_arm");      RA  = hardwareMap.get(Servo.class,     "Right_arm");
+        LL  = hardwareMap.get(DcMotorEx.class, "Left_Lift");     RL  = hardwareMap.get(DcMotorEx.class, "Right_Lift");
         encoder1 = FL ;
         encoder2 = FR;
         encoder3 = BL;
@@ -143,18 +148,22 @@ public abstract class Robot extends LinearOpMode {
                 RevHubOrientationOnRobot.UsbFacingDirection .LEFT)));
 
         // Reverse Servo
-        LA .setDirection(Servo.Direction.REVERSE);
+        RA .setDirection(Servo.Direction.REVERSE);
         // Set Servo Position
         // setMode Motors
         FL.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         FR.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         BL.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         BR.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        LL.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        RL.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
 
         FL.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         FR.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         BL.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         BR.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        LL.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        RL.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
         // Reverse Motors
         FR.setDirection(DcMotorSimple.Direction.REVERSE);

@@ -20,7 +20,7 @@ public class Tele extends Robot {
     private void Init() {
         // Initialize Robot
         Initialize(DcMotor.RunMode.RUN_WITHOUT_ENCODER, new double[]{0, 0, AL_Ang},
-                new double[]{0, 0, 0, 0});
+                                                        new double[]{0, 0, 0, 0});
 
         // Show FTC Dashboard
         controller = new Controller(0.9, 0.01, 0.008, 0);
@@ -54,9 +54,13 @@ public class Tele extends Robot {
         double rl            = gamepad2.right_trigger;
         boolean ltpress      = lt >= 0.25;
         boolean rlpress      = rl >= 0.25;
-        Lift_Power   = ltpress ? (CurPosLift < 0          ?  0   : -lt) :
-                       rlpress ? (CurPosLift > 3000       ?  0   :  rl) : 0;
+        Lift_Power   = ltpress ? (CurPosLift < -30000          ?  0   : -lt) :
+                       rlpress ? (CurPosLift > 30000       ?  0   :  rl) : 0;
         liftPower(Lift_Power);
+    }
+    private void ARM (){
+        if(gamepad1.x)  SetServoPos(0.55, RA, LA);
+        if(gamepad1.a)  SetServoPos(0.0, RA, LA);
     }
 
     @Override
@@ -69,7 +73,7 @@ public class Tele extends Robot {
             while (opModeIsActive()) {
                 Lift();
                 Odomentry();
-                Movement();
+                ARM();
 
                 telemetry.addData("XYH", "%6f cm %6f cm %6f deg", Posx, Posy, Math.toDegrees(heading));
                 telemetry.addData("LRM", "%6d  %6d %6d", Current1Position, Current2Position, Current3Position);
@@ -77,16 +81,8 @@ public class Tele extends Robot {
                 telemetry.addData("Liftpower", "%6f", Lift_Power);
                 telemetry.update();
                 if (gamepad1.y) {
-                    imu.resetYaw();
-                    setpoint = 0;
-                }
-                if (gamepad1.x) {
-                    RA.setPosition(0.55);
-                    LA.setPosition(0.55);
-                }
-                if (gamepad1.a) {
-                    RA.setPosition(0);
-                    LA.setPosition(0);
+                    LL.setPower(1);
+                    RL.setPower(1);
                 }
                 if (gamepad1.b) {
                     n += 0.01 ;

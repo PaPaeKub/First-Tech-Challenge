@@ -10,6 +10,7 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
+import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.vision.VisionPortal;
@@ -69,15 +70,15 @@ public abstract class Robot extends LinearOpMode {
       double dthetha = cm_per_tick * ( dn2 - dn1 ) / L ;
 
       double theta = heading + (dn2 - dn1) / L;
-      Posy -= dy * Math.cos(yaw) - dx * Math.sin(yaw);
-      Posx += dy * Math.sin(yaw) + dx * Math.cos(yaw);
+      Posy -= (dy * Math.cos(yaw) - dx * Math.sin(yaw))/tileSize[1];
+      Posx += (dy * Math.sin(yaw) + dx * Math.cos(yaw))/tileSize[0];
       heading += dthetha;
     }
 
-    public void move(double tilex, double tiley, double timeout , double setpoint){
+    public void move(double power, double tilex, double tiley , double setpoint){
         Controller  pidR    = new Controller(1.0, 0.01, 0.04, 0);
-        double targetx = tilex * tileSize[0];
-        double targety = tiley * tileSize[1];
+        double targetx = tilex;
+        double targety = tiley;
         ElapsedTime runtime = new ElapsedTime();
         runtime.reset();
 
@@ -88,8 +89,8 @@ public abstract class Robot extends LinearOpMode {
             double DeltaX = targetx - Posx;
             double DeltaY = targety - Posy;
 
-            double Vx = -0.1 * DeltaX;
-            double Vy = 0.1 * DeltaY;
+            double Vx = -power * DeltaX;
+            double Vy = power * DeltaY;
 
             double x2    =  (Math.cos(yaw) * Vx) - (Math.sin(yaw) * Vy);
             double y2    =  (Math.sin(yaw) * Vx) + (Math.cos(yaw) * Vy);
@@ -102,7 +103,7 @@ public abstract class Robot extends LinearOpMode {
             telemetry.addData("XY", "%6f cm %6f cm" , Posx, Posy);
             telemetry.addData("tagetXtargetY", "%6f cm %6f cm" , targetx, targety);
             telemetry.update();
-            if (Utilize.AtTargetRange(Posx, targetx, 10) && Utilize.AtTargetRange(Posy, targety, 10)) break;
+            if (Utilize.AtTargetRange(Posx, targetx, 10) && Utilize.AtTargetRange(Posy, targety, 5)) break;
         }
         Break(0.3);
     }
@@ -132,6 +133,17 @@ public abstract class Robot extends LinearOpMode {
         LL.setPower(LiftPower);
         RL.setPower(LiftPower);
     }
+    public double  SetServoPos (double pos, Servo L_servo, Servo R_servo){
+        pos = Range.clip(pos, 0, 1);
+        L_servo.setPosition(pos);
+        R_servo.setPosition(pos);
+        return pos;
+    }
+    public double SetServoPos(double pos, Servo servo) {
+        pos = Range.clip(pos, 0, 1);
+        servo.setPosition(pos);
+        return pos;
+    }
     public void Initialize(DcMotor.RunMode moveMode, double[] DuoServoAng, double[] ServoAng) {
         imu = hardwareMap.get(IMU.class,       "imu");
         FL  = hardwareMap.get(DcMotorEx.class, "Front_Left");    FR  = hardwareMap.get(DcMotorEx.class, "Front_Right");
@@ -146,15 +158,14 @@ public abstract class Robot extends LinearOpMode {
       imu.initialize(new IMU.Parameters(new RevHubOrientationOnRobot(
                 RevHubOrientationOnRobot.LogoFacingDirection.UP,
                 RevHubOrientationOnRobot.UsbFacingDirection .LEFT)));
-
         // Reverse Servo
         RA .setDirection(Servo.Direction.REVERSE);
         // Set Servo Position
+        SetServoPos(DuoServoAng[0], LA, RA);
         // setMode Motors
         FL.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         FR.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         BL.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        BR.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         LL.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         RL.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
 
@@ -168,7 +179,7 @@ public abstract class Robot extends LinearOpMode {
         // Reverse Motors
         FR.setDirection(DcMotorSimple.Direction.REVERSE);
         BR.setDirection(DcMotorSimple.Direction.REVERSE);
-
+        LL.setDirection(DcMotorSimple.Direction.REVERSE);
         // SetBehavior Motors
         FL.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         FR.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);

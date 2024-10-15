@@ -20,10 +20,10 @@ public class Tele extends Robot {
     private void Init() {
         // Initialize Robot
         Initialize(DcMotor.RunMode.RUN_WITHOUT_ENCODER, new double[]{0, 0, AL_Ang},
-                new double[]{0, 0, 0, 0});
+                                                        new double[]{0, 0, 0, 0});
 
         // Show FTC Dashboard
-        controller = new Controller(0.9, 0.01, 0.008, 0);
+        controller = new Controller(0.9, 0.1, 0.008, 0);
     }
 
     private void Movement() {
@@ -48,53 +48,23 @@ public class Tele extends Robot {
                 (y2 + x2 - r) / d, (y2 - x2 + r) / d);
         telemetry.addData("yaw", Math.toDegrees(-yaw));
     }
-    private void Lift (){
-        CurPosLift    = Math.max(LL.getCurrentPosition(), RL.getCurrentPosition());
-        double lt            = gamepad2.left_trigger;
-        double rl            = gamepad2.right_trigger;
-        boolean ltpress      = lt >= 0.25;
-        boolean rlpress      = rl >= 0.25;
-        Lift_Power   = ltpress ? (CurPosLift < 0          ?  0   : -lt) :
-                       rlpress ? (CurPosLift > 3000       ?  0   :  rl) : 0;
-        liftPower(Lift_Power);
-    }
-
     @Override
     public void runOpMode() {
         Init();
-        RA.setPosition(0);
-        LA.setPosition(0);
         waitForStart();
         if (opModeIsActive()) {
             while (opModeIsActive()) {
-                Lift();
                 Odomentry();
                 Movement();
 
-                telemetry.addData("XYH", "%6f cm %6f cm %6f deg", Posx, Posy, Math.toDegrees(heading));
+                telemetry.addData("XYH", "%6f cm %6f cm %6f deg", Posx, Posy, Math.toDegrees(theta));
                 telemetry.addData("LRM", "%6d  %6d %6d", Current1Position, Current2Position, Current3Position);
-                telemetry.addData("Lift", "%6f", CurPosLift);
-                telemetry.addData("Liftpower", "%6f", Lift_Power);
                 telemetry.update();
-                if (gamepad1.y) {
+                if(gamepad1.a){
                     imu.resetYaw();
                     setpoint = 0;
                 }
-                if (gamepad1.x) {
-                    RA.setPosition(0.55);
-                    LA.setPosition(0.55);
-                }
-                if (gamepad1.a) {
-                    RA.setPosition(0);
-                    LA.setPosition(0);
-                }
-                if (gamepad1.b) {
-                    n += 0.01 ;
-                    n = Math.min(n,0.55);
-                    RA.setPosition(n);
-                    LA.setPosition(n);
 
-                }
             }
         }
     }

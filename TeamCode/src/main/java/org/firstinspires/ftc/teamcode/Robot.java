@@ -38,7 +38,7 @@ public abstract class Robot extends LinearOpMode {
     public final double   N                   = 2000 ; // ticks per one rotation
     public double         cm_per_tick         = 2.0 * Math.PI * r / N ;
     public int            dn1, dn2, dn3 ;
-    public double         dx, dy, Posx, Posy, heading  ;
+    public double         dx, dy, Posx, Posy, heading, n  ;
 
     // update encoder
     public int            Current1Position= 0 ;
@@ -132,6 +132,7 @@ public abstract class Robot extends LinearOpMode {
         imu = hardwareMap.get(IMU.class,       "imu");
         FL  = hardwareMap.get(DcMotorEx.class, "Front_Left");    FR  = hardwareMap.get(DcMotorEx.class, "Front_Right");
         BL  = hardwareMap.get(DcMotorEx.class, "Back_Left");     BR  = hardwareMap.get(DcMotorEx.class, "Back_Right");
+        LA  = hardwareMap.get(Servo.class,     "Left_arm");      RA  = hardwareMap.get(Servo.class,     "Right_arm");
         encoder1 = FL ;
         encoder2 = FR;
         encoder3 = BL;
@@ -142,9 +143,8 @@ public abstract class Robot extends LinearOpMode {
                 RevHubOrientationOnRobot.UsbFacingDirection .LEFT)));
 
         // Reverse Servo
-
+        LA .setDirection(Servo.Direction.REVERSE);
         // Set Servo Position
-
         // setMode Motors
         FL.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         FR.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);

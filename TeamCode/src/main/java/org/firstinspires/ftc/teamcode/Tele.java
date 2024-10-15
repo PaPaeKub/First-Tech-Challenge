@@ -20,21 +20,21 @@ public class Tele extends Robot {
     private void Init() {
         // Initialize Robot
         Initialize(DcMotor.RunMode.RUN_WITHOUT_ENCODER, new double[]{0, 0, AL_Ang},
-                                                        new double[]{0, 0, 0, 0});
+                new double[]{0, 0, 0, 0});
 
         // Show FTC Dashboard
-        controller =new Controller(0.9, 0.01, 0.008, 0);
+        controller = new Controller(0.9, 0.01, 0.008, 0);
     }
 
     private void Movement() {
-        double speed =  0.275;
-        double lx    = -gamepad1.left_stick_x;
-        double ly    = -gamepad1.left_stick_y;
-        double x1    =  gamepad1.dpad_left ?  speed : gamepad1.dpad_right ? -speed : lx;
-        double y1    =  gamepad1.dpad_up   ? -speed : gamepad1.dpad_down  ?  speed : ly;
-        double yaw   =  imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.RADIANS);
-        double x2    =  (Math.cos(yaw) * x1) - (Math.sin(yaw) * y1);
-        double y2    =  (Math.sin(yaw) * x1) + (Math.cos(yaw) * y1);
+        double speed = 0.275;
+        double lx = -gamepad1.left_stick_x;
+        double ly = -gamepad1.left_stick_y;
+        double x1 = gamepad1.dpad_left ? speed : gamepad1.dpad_right ? -speed : lx;
+        double y1 = gamepad1.dpad_up ? -speed : gamepad1.dpad_down ? speed : ly;
+        double yaw = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.RADIANS);
+        double x2 = (Math.cos(yaw) * x1) - (Math.sin(yaw) * y1);
+        double y2 = (Math.sin(yaw) * x1) + (Math.cos(yaw) * y1);
         // Rotate
         double r = r_disable ? 0 : controller.Calculate(WrapRads(setpoint - yaw));
         double x = -gamepad1.right_stick_x;
@@ -48,28 +48,40 @@ public class Tele extends Robot {
                 (y2 + x2 - r) / d, (y2 - x2 + r) / d);
         telemetry.addData("yaw", Math.toDegrees(-yaw));
     }
+
     @Override
     public void runOpMode() {
         Init();
+        RA.setPosition(0);
+        LA.setPosition(0);
         waitForStart();
         if (opModeIsActive()) {
             while (opModeIsActive()) {
-                Movement();
                 Odomentry();
 
-                telemetry.addData("XYH", "%6f cm %6f cm %6f deg" , Posx, Posy, Math.toDegrees(heading));
-                telemetry.addData("LRM", "%6d  %6d %6d" ,Current1Position, Current2Position, Current3Position);
-                telemetry.addData("Stickx", "%6f" , (-gamepad1.right_stick_x));
+                telemetry.addData("XYH", "%6f cm %6f cm %6f deg", Posx, Posy, Math.toDegrees(heading));
+                telemetry.addData("LRM", "%6d  %6d %6d", Current1Position, Current2Position, Current3Position);
+                telemetry.addData("Stickx", "%6f", (-gamepad1.right_stick_x));
+                telemetry.addData("Servo", "%6f", (n));
                 telemetry.update();
-                if(gamepad1.y){
+                if (gamepad1.y) {
                     imu.resetYaw();
-                    setpoint=0;
+                    setpoint = 0;
                 }
-                if(gamepad1.x){
-                    FL.setPower(1);
-                    FR.setPower(1);
-                    BL.setPower(1);
-                    BR.setPower(1);
+                if (gamepad1.x) {
+                    RA.setPosition(0.55);
+                    LA.setPosition(0.55);
+                }
+                if (gamepad1.a) {
+                    RA.setPosition(0);
+                    LA.setPosition(0);
+                }
+                if (gamepad1.b) {
+                    n += 0.01 ;
+                    n = Math.min(n,0.55);
+                    RA.setPosition(n);
+                    LA.setPosition(n);
+
                 }
             }
         }
